@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'task_manager.dart';
 
 void main() {
   runApp(const MyApp());
@@ -30,6 +31,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  final TaskManager taskManager = TaskManager();
+  String taskOutput = "Нажмите кнопку для обработки задач";
 
   void _incrementCounter() {
     setState(() {
@@ -48,11 +51,32 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text('You have pushed the button this many times:'),
+            const Text('Вы нажали кнопку столько раз:'),
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
+
+            const SizedBox(height: 20),
+            const Text('Результаты обработки задач:'),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                taskOutput,
+                style: Theme.of(context).textTheme.bodyLarge,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                String result = await taskManager.processTasks();
+                setState(() {
+                  taskOutput = result;
+                });
+              },
+              child: const Text("Обработать задачи"),
+            ),
+
           ],
         ),
       ),
