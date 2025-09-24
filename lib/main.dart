@@ -144,13 +144,13 @@ class _Card extends StatelessWidget {
         border: Border.all(color: Colors.grey, width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.lightGreen.withOpacity(.2),
+            color: Colors.lightGreen.withValues(alpha: 0.2),
             spreadRadius: 4,
             offset: const Offset(0, 5),
             blurRadius: 8,
           ),
         ],
-        color: Colors.grey.withOpacity(.2),
+        color: Colors.grey.withValues(alpha: 0.2),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -183,7 +183,7 @@ class _Card extends StatelessWidget {
                         Text(
                           descriptionText,
                           style: TextStyle(
-                            color: Colors.black.withOpacity(0.7),
+                            color: Colors.black.withValues(alpha: 0.7),
                             fontSize: 16,
                             fontStyle: FontStyle.italic,
                           ),
