@@ -142,26 +142,35 @@ class _CardState extends State<_Card> {
                         alignment: Alignment.bottomRight,
                         child: Padding(
                           padding: const EdgeInsets.only(left: 8.0),
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                isLiked = !isLiked;
-                              });
-                              widget.onLike?.call(widget.text, isLiked);
-                            },
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 300),
-                              child: isLiked
-                                  ? const Icon(
-                                      Icons.favorite,
-                                      color: Colors.redAccent,
-                                      key: ValueKey<int>(0),
-                                    )
-                                  : const Icon(
-                                      Icons.favorite_border,
-                                      key: ValueKey<int>(1),
-                                    ),
-                            ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: Icon(widget.icon),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    isLiked = !isLiked;
+                                  });
+                                  widget.onLike?.call(widget.text, isLiked);
+                                },
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 300),
+                                  child: isLiked
+                                      ? const Icon(
+                                    Icons.favorite,
+                                    color: Colors.redAccent,
+                                    key: ValueKey<int>(0),
+                                  )
+                                      : const Icon(
+                                    Icons.favorite_border,
+                                    key: ValueKey<int>(1),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
