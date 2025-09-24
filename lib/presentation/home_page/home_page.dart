@@ -107,7 +107,7 @@ class Body extends StatelessWidget {
             'Покемон $title ${isLiked ? 'liked' : 'disliked'}',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
-          backgroundColor: Colors.orangeAccent,
+          backgroundColor: Colors.lightGreen,
           duration: const Duration(seconds: 1),
         ),
       );
