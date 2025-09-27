@@ -4,7 +4,6 @@ part 'pokemons_dto.g.dart';
 
 @JsonSerializable(createToJson: false)
 class PokemonsDto {
-
   final List<PokemonDataDto>? data;
 
   const PokemonsDto({this.data});
@@ -14,7 +13,6 @@ class PokemonsDto {
 
 @JsonSerializable(createToJson: false)
 class PokemonDataDto {
-
   final String? id;
   final String? type;
   final PokemonAttributesDataDto? attributes;
@@ -26,11 +24,9 @@ class PokemonDataDto {
 
 @JsonSerializable(createToJson: false)
 class PokemonAttributesDataDto {
-
   final String? name;
   final String? description;
   final List<String>? types;
-  // final List<String>? abilities;
   final String? image;
 
   const PokemonAttributesDataDto({this.name, this.description, this.types, this.image});

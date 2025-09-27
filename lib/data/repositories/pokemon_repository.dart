@@ -7,25 +7,66 @@ import 'api_interface.dart';
 
 class PokemonRepository extends ApiInterface {
   static final Dio _dio = Dio()
-      ..interceptors.add(PrettyDioLogger(
-        requestHeader: true,
-        requestBody: true,
-      ));
+    ..interceptors.add(PrettyDioLogger(
+      requestHeader: true,
+      requestBody: true,
+    ));
 
   static const String _baseUrl = 'https://pokeapi.co';
 
   @override
-  Future <List<CardData>?> loadData() async {
+  Future<List<CardData>?> loadData() async {
     try {
-      const String url = '$_baseUrl/api/v2/pokemons';
+      const String listUrl = '$_baseUrl/api/v2/pokemon?limit=20';
 
-      final Response<dynamic> response = await _dio.get<Map<dynamic, dynamic>>(url);
+      final Response<dynamic> listResponse = await _dio.get(listUrl);
 
-      final PokemonsDto dto = PokemonsDto.fromJson(response.data as Map<String, dynamic>);
+      final List<dynamic> results = listResponse.data['results'] as List<dynamic>;
+
+      final List<PokemonDataDto> dtoList = [];
+
+      for (final result in results) {
+        final String name = (result['name'] as String).replaceFirst(result['name'][0], result['name'][0].toUpperCase());
+        final String pokeUrl = result['url'] as String;
+
+        final Response<dynamic> pokeResponse = await _dio.get(pokeUrl);
+
+        final List<String> types = (pokeResponse.data['types'] as List<dynamic>)
+            .map((t) => (t['type']['name'] as String).replaceFirst(t['type']['name'][0], t['type']['name'][0].toUpperCase()))
+            .toList();
+
+        final String? image = pokeResponse.data['sprites']['other']['official-artwork']['front_default'] as String? ??
+            pokeResponse.data['sprites']['front_default'] as String?;
+
+        final String speciesUrl = pokeResponse.data['species']['url'] as String;
+
+        final Response<dynamic> speciesResponse = await _dio.get(speciesUrl);
+
+        String description = '';
+        final List<dynamic> flavorTexts = speciesResponse.data['flavor_text_entries'] as List<dynamic>;
+        for (final ft in flavorTexts) {
+          if (ft['language']['name'] == 'en') {
+            description = (ft['flavor_text'] as String).replaceAll(RegExp(r'[\n\f]'), ' ');
+            break;
+          }
+        }
+
+        dtoList.add(PokemonDataDto(
+          id: pokeResponse.data['id'].toString(),
+          type: 'pokemon',
+          attributes: PokemonAttributesDataDto(
+            name: name,
+            description: description,
+            types: types,
+            image: image,
+          ),
+        ));
+      }
+
+      final PokemonsDto dto = PokemonsDto(data: dtoList);
       final List<CardData>? data = dto.data?.map((e) => e.toDomain()).toList();
       return data;
     } on DioException catch (e) {
-      // todo
       return null;
     }
   }

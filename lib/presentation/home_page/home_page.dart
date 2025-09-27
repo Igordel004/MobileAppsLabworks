@@ -1,9 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../data/repositories/pokemon_repository.dart';
-
-
 import '../../domain/models/card.dart';
+
 part '../details_page/details_page.dart';
 part 'card.dart';
 
@@ -34,28 +33,27 @@ class Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final data = MockRepository().loadData();
     final data = PokemonRepository().loadData();
 
     return Center(
       child: FutureBuilder<List<CardData>?>(
         future: data,
-        builder: (context, snapshot) => SingleChildScrollView(
-          child: snapshot.hasData
-            ? Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return ListView(
               children: snapshot.data?.map((data) {
                 return _Card.fromData(
                   data,
-                  onLike: (String title, bool isLiked) =>
-                      _showSnackBar(context, title, isLiked),
+                  onLike: (String title, bool isLiked) => _showSnackBar(context, title, isLiked),
                   onTap: () => _navToDetails(context, data),
                 );
               }).toList() ??
-              [],
-            )
-          : const CircularProgressIndicator(),
-        ),
+                  [],
+            );
+          } else {
+            return const CircularProgressIndicator();
+          }
+        },
       ),
     );
   }
