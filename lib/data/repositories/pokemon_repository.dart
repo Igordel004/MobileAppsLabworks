@@ -12,54 +12,83 @@ class PokemonRepository extends ApiInterface {
       requestBody: true,
     ));
 
-  static const String _baseUrl = 'https://pokeapi.co';
+  static const String _baseUrl = 'https://beta.pokeapi.co/graphql/v1beta';
 
   @override
   Future<List<CardData>?> loadData({String? q}) async {
     try {
-      const String listUrl = '$_baseUrl/api/v2/pokemon?limit=20';
+      _dio.options.baseUrl = _baseUrl;
 
-      final Response<dynamic> listResponse = await _dio.get(listUrl);
+      const String query = r'''
+        query getPokemons($limit: Int!, $where: pokemon_v2_pokemon_bool_exp) {
+          pokemon_v2_pokemon(limit: $limit, order_by: {id: asc}, where: $where) {
+            id
+            name
+            pokemon_v2_pokemontypes {
+              pokemon_v2_type {
+                name
+              }
+            }
+            pokemon_v2_pokemonsprites {
+              sprites
+            }
+            pokemon_v2_pokemonspecy {
+              pokemon_v2_pokemonspeciesflavortexts(where: {pokemon_v2_language: {name: {_eq: "en"}}}, limit: 1) {
+                flavor_text
+              }
+            }
+          }
+        }
+      ''';
 
-      final List<dynamic> results = listResponse.data['results'] as List<dynamic>;
+      final Map<String, dynamic> variables = {
+        'limit': 151,
+      };
+
+      if (q != null && q.isNotEmpty) {
+        variables['where'] = {
+          'name': {'_ilike': '%$q%'},
+        };
+      }
+
+      final Response<dynamic> response = await _dio.post(
+        '',
+        data: {
+          'query': query,
+          'variables': variables,
+        },
+      );
+
+      final List<dynamic> results = response.data['data']['pokemon_v2_pokemon'] as List<dynamic>;
 
       final List<PokemonDataDto> dtoList = [];
 
       for (final result in results) {
-        final String name = (result['name'] as String).replaceFirst(result['name'][0], result['name'][0].toUpperCase());
+        final String rawName = result['name'] as String;
+        final String name = rawName.replaceFirst(rawName[0], rawName[0].toUpperCase());
 
-        if (q != null && q.isNotEmpty) {
-          if (!name.toLowerCase().contains(q.toLowerCase())) {
-            continue;
-          }
-        }
+        final List<dynamic> typeList = result['pokemon_v2_pokemontypes'] as List<dynamic>;
+        final List<String> types = typeList.map((t) {
+          final String rawType = t['pokemon_v2_type']['name'] as String;
+          return rawType.replaceFirst(rawType[0], rawType[0].toUpperCase());
+        }).toList();
 
-        final String pokeUrl = result['url'] as String;
+        final List<dynamic> spritesList = result['pokemon_v2_pokemonsprites'] as List<dynamic>;
+        final Map<String, dynamic> sprites = spritesList.isNotEmpty ? spritesList[0]['sprites'] as Map<String, dynamic> : {};
 
-        final Response<dynamic> pokeResponse = await _dio.get(pokeUrl);
+        final String? image = sprites['other']?['official-artwork']?['front_default'] as String? ??
+            sprites['front_default'] as String?;
 
-        final List<String> types = (pokeResponse.data['types'] as List<dynamic>)
-            .map((t) => (t['type']['name'] as String).replaceFirst(t['type']['name'][0], t['type']['name'][0].toUpperCase()))
-            .toList();
-
-        final String? image = pokeResponse.data['sprites']['other']['official-artwork']['front_default'] as String? ??
-            pokeResponse.data['sprites']['front_default'] as String?;
-
-        final String speciesUrl = pokeResponse.data['species']['url'] as String;
-
-        final Response<dynamic> speciesResponse = await _dio.get(speciesUrl);
+        final Map<String, dynamic> species = result['pokemon_v2_pokemonspecy'] as Map<String, dynamic>;
+        final List<dynamic> flavorTexts = species['pokemon_v2_pokemonspeciesflavortexts'] as List<dynamic>;
 
         String description = '';
-        final List<dynamic> flavorTexts = speciesResponse.data['flavor_text_entries'] as List<dynamic>;
-        for (final ft in flavorTexts) {
-          if (ft['language']['name'] == 'en') {
-            description = (ft['flavor_text'] as String).replaceAll(RegExp(r'[\n\f]'), ' ');
-            break;
-          }
+        if (flavorTexts.isNotEmpty) {
+          description = (flavorTexts[0]['flavor_text'] as String).replaceAll(RegExp(r'[\n\f]'), ' ');
         }
 
         dtoList.add(PokemonDataDto(
-          id: pokeResponse.data['id'].toString(),
+          id: (result['id'] as int).toString(),
           type: 'pokemon',
           attributes: PokemonAttributesDataDto(
             name: name,
