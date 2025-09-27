@@ -28,32 +28,76 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class Body extends StatelessWidget {
+class Body extends StatefulWidget {
   const Body({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final data = PokemonRepository().loadData();
+  State<Body> createState() => _BodyState();
+}
 
-    return Center(
-      child: FutureBuilder<List<CardData>?>(
-        future: data,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            return ListView(
-              children: snapshot.data?.map((data) {
-                return _Card.fromData(
-                  data,
-                  onLike: (String title, bool isLiked) => _showSnackBar(context, title, isLiked),
-                  onTap: () => _navToDetails(context, data),
-                );
-              }).toList() ??
-                  [],
-            );
-          } else {
-            return const CircularProgressIndicator();
-          }
-        },
+class _BodyState extends State<Body> {
+  final TextEditingController _searchController = TextEditingController();
+  final PokemonRepository _repo = PokemonRepository();
+  late Future<List<CardData>?> _dataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _dataFuture = _repo.loadData();
+  }
+
+  void _onSearchChanged(String search) {
+    setState(() {
+      _dataFuture = _repo.loadData(q: search.isNotEmpty ? search : null);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: CupertinoSearchTextField(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<CardData>?>(
+              future: _dataFuture,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  final pokemons = snapshot.data!;
+                  if (pokemons.isEmpty) {
+                    return const Center(
+                      child: Text('Покемоны не найдены'),
+                    );
+                  }
+                  return ListView(
+                    children: pokemons.map((data) {
+                      return _Card.fromData(
+                        data,
+                        onLike: (String title, bool isLiked) => _showSnackBar(context, title, isLiked),
+                        onTap: () => _navToDetails(context, data),
+                      );
+                    }).toList(),
+                  );
+                } else if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Ошибка: ${snapshot.error}'),
+                  );
+                } else {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -78,5 +122,11 @@ class Body extends StatelessWidget {
       context,
       CupertinoPageRoute(builder: (context) => DetailsPage(data)),
     );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }

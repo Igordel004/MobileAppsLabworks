@@ -15,7 +15,7 @@ class PokemonRepository extends ApiInterface {
   static const String _baseUrl = 'https://pokeapi.co';
 
   @override
-  Future<List<CardData>?> loadData() async {
+  Future<List<CardData>?> loadData({String? q}) async {
     try {
       const String listUrl = '$_baseUrl/api/v2/pokemon?limit=20';
 
@@ -27,6 +27,13 @@ class PokemonRepository extends ApiInterface {
 
       for (final result in results) {
         final String name = (result['name'] as String).replaceFirst(result['name'][0], result['name'][0].toUpperCase());
+
+        if (q != null && q.isNotEmpty) {
+          if (!name.toLowerCase().contains(q.toLowerCase())) {
+            continue;
+          }
+        }
+
         final String pokeUrl = result['url'] as String;
 
         final Response<dynamic> pokeResponse = await _dio.get(pokeUrl);
